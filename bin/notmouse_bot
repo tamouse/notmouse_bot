@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+
+require 'notmouse_bot'
+require 'cinch'
+
+Signal.trap('INT') do
+  warn "Caught Interrupt Signal, terminating"
+  exit 1
+end
+
+OPERS = ['tamouse__']
+
+$bot = Cinch::Bot.new do
+  configure do |c|
+    c.server = 'irc.freenode.net'
+    c.channels = ['##notmousebottest']
+    c.nick = 'notmouse_bot'
+    c.user = 'notmouse'
+    c.realname = 'notmouse, a cinch bot by tamouse__'
+  end
+
+  helpers do
+    def authorized?(user)
+      OPERS.include? user.authname
+    end
+    def inspect_attributes(user, obj, methods)
+      methods.each do |meth|
+        user.send "#{meth}: #{obj.__send__(meth).inspect}"
+      end
+    end
+  end
+
+  on :message, "!debug_message" do |m|
+    if authorized?(m.user)
+      inspect_attributes(m.user, m, [:channel, :command, :events, :message, 
+        :prefix, :raw, :server, :target, :user])
+    else
+      m.reply "you are not authorized", true
+    end
+
+  end
+
+  on :message, "!debug_user" do |m|
+    if authorized?(m.user)
+      inspect_attributes(m.user, m.user, [:authname, :channels, :host, :idle, :nick, :realname])
+    else
+      m.reply "you are not authorized", true
+    end
+  end
+
+  on :channel do |m|
+    urls = URI.extract(m.message, ["http", "https"])
+    m.reply "urls found: #{urls.join(", ")}" unless urls.empty?
+  end
+
+
+end
+
+$bot.start
