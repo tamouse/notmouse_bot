@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
 
-require 'notmouse_bot'
 require 'cinch'
+require 'cinch/plugins/ctcp'
+require 'cinch/plugins/showtitle'
+require 'cinch/plugins/operations'
 
-Signal.trap('INT') do
-  warn "Caught Interrupt Signal, terminating"
-  exit 1
-end
+require 'notmouse_bot'
 
 OPERS = ['tamouse__']
 
@@ -17,11 +16,12 @@ $bot = Cinch::Bot.new do
     c.nick = 'notmouse_bot'
     c.user = 'notmouse'
     c.realname = 'notmouse, a cinch bot by tamouse__'
+    c.plugins.plugins = [Cinch::Plugins::Ctcp, Cinch::Plugins::Showtitle, Cinch::Plugins::Operations]
   end
 
   helpers do
     def authorized?(user)
-      OPERS.include? user.authname
+      user.oper? || OPERS.include?(user.authname)
     end
     def inspect_attributes(user, obj, methods)
       methods.each do |meth|
@@ -47,12 +47,6 @@ $bot = Cinch::Bot.new do
       m.reply "you are not authorized", true
     end
   end
-
-  on :channel do |m|
-    urls = URI.extract(m.message, ["http", "https"])
-    m.reply "urls found: #{urls.join(", ")}" unless urls.empty?
-  end
-
 
 end
 

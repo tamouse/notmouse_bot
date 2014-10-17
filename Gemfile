@@ -1,4 +1,9 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in notmouse_bot.gemspec
-gemspec
+gem "cinch"
+gem "nokogiri"
+gem "awesome_print"
+
+group :development, :test do
+  gem "rake", "~> 10"
+end
