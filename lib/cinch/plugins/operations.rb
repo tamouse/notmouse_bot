@@ -11,11 +11,7 @@ module Cinch
       match /quit/, :method => :quit_irc, :prefix => '!!'
 
       def show_channels(m)
-        if authorized?(m.user)
-          m.reply "#{m.bot.name} in #{m.bot.channels.map(&:name)}"
-        else
-          m.reply "You are not authorized.", true
-        end
+        m.reply "#{m.bot.name} in #{m.bot.channels.map(&:name)}" if authorized?(m)
       end
 
       def part_channel(m, channels)
@@ -35,25 +31,21 @@ module Cinch
       end
 
       def do_channels_command(m, channels, &block)
-        if authorized?(m.user)
+        if authorized?(m)
           channels.split.each do |channel|
             yield channel
           end
-        else
-          m.reply "You are not authorized.", true
         end
       end
 
       def do_command(cmd, m)
-        if authorized?(m.user)
-          m.bot.__send__(cmd)
-        else
-          m.reply "You are not authorized.", true
-        end
+        m.bot.__send__(cmd) if authorized?(m)
       end
 
-      def authorized?(user)
-        user.oper? || OPERS.include?(user.authname)
+      def authorized?(m)
+        (m.user.oper? || OPERS.include?(m.user.authname)).tap do |t|
+          m.target.reply("#{m.user} not authorized") unless t
+        end
       end
 
       def get_channels(msg)

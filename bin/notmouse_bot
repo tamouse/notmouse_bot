@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+$:.unshift(File.expand_path("../../lib", __FILE__))
 
 require 'cinch'
 require 'cinch/plugins/ctcp'
@@ -20,32 +21,26 @@ $bot = Cinch::Bot.new do
   end
 
   helpers do
-    def authorized?(user)
-      user.oper? || OPERS.include?(user.authname)
+    def authorized?(m)
+      (m.user.oper? || OPERS.include?(m.user.authname)).tap do |t|
+        m.reply "#{m.user} not authorized" unless t
+      end
     end
-    def inspect_attributes(user, obj, methods)
+
+    def inspect_attributes(target, obj, methods)
       methods.each do |meth|
-        user.send "#{meth}: #{obj.__send__(meth).inspect}"
+        target.send "#{meth}: #{obj.__send__(meth).inspect}"
       end
     end
   end
 
   on :message, "!debug_message" do |m|
-    if authorized?(m.user)
-      inspect_attributes(m.user, m, [:channel, :command, :events, :message, 
-        :prefix, :raw, :server, :target, :user])
-    else
-      m.reply "you are not authorized", true
-    end
-
+    inspect_attributes(m.target, m, [:channel, :command, :events, :message, 
+      :prefix, :raw, :server, :target, :user]) if authorized?(m)
   end
 
   on :message, "!debug_user" do |m|
-    if authorized?(m.user)
-      inspect_attributes(m.user, m.user, [:authname, :channels, :host, :idle, :nick, :realname])
-    else
-      m.reply "you are not authorized", true
-    end
+    inspect_attributes(m.target, m.user, [:authname, :channels, :host, :idle, :nick, :realname]) if authorized?(m)
   end
 
 end
